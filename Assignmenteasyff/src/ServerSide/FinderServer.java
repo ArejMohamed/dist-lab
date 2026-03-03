@@ -3,12 +3,14 @@ package ServerSide;
 import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FinderServer implements Runnable
 {
     Socket cSocket;
     static ArrayList<String[]> clients = new ArrayList<String[]>();
-    // each entry: {name, host, port}
+    // each entry: {name, host, port, code}
+    static AtomicInteger codeCounter = new AtomicInteger(1000);
 
     public FinderServer(Socket cSocket)
     {
@@ -34,9 +36,10 @@ public class FinderServer implements Runnable
                 if (exists) {
                     output.writeUTF("Already registered: " + name);
                 } else {
-                    clients.add(new String[]{name, host, port});
-                    output.writeUTF("Registered: " + name);
-                    FinderServerForm.log("Registered: " + name + " at " + host + ":" + port);
+                    String code = String.valueOf(codeCounter.getAndIncrement());
+                    clients.add(new String[]{name, host, port, code});
+                    output.writeUTF("Registered: " + name + " Code: " + code);
+                    FinderServerForm.log("Registered: " + name + " at " + host + ":" + port + " code=" + code);
                 }
 
             } else if (command.startsWith("FIND")) {
@@ -45,7 +48,7 @@ public class FinderServer implements Runnable
                 String result = "Not found";
                 for (String[] c : clients) {
                     if (c[0].equals(name)) {
-                        result = c[1] + ":" + c[2];
+                        result = c[1] + ":" + c[2] + ":" + c[3];
                         break;
                     }
                 }
