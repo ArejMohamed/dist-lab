@@ -1,8 +1,5 @@
 package ClientSide;
 
-import java.net.*;
-import java.io.*;
-
 public class ClientForm extends javax.swing.JFrame {
 
     public ClientForm() {
@@ -152,47 +149,20 @@ public class ClientForm extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         try {
-            Socket s1 = new Socket(jTextField3.getText(), Integer.parseInt(jTextField4.getText()));
-            DataInputStream input = new DataInputStream(s1.getInputStream());
-            DataOutputStream output = new DataOutputStream(s1.getOutputStream());
-            output.writeUTF("REGISTER " + jTextField1.getText() + " localhost " + jTextField2.getText());
-            jTextArea1.append(input.readUTF() + "\n");
-            input.close();
-            output.close();
-            s1.close();
-        } catch (Exception e) {
-            jTextArea1.append("Error: " + e.getMessage() + "\n");
-        }
+            jTextArea1.append(Client.register(jTextField3.getText(), Integer.parseInt(jTextField4.getText()), jTextField1.getText(), jTextField2.getText()) + "\n");
+        } catch (Exception e) { jTextArea1.append("Error: " + e.getMessage() + "\n"); }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         try {
-            Socket s1 = new Socket(jTextField3.getText(), Integer.parseInt(jTextField4.getText()));
-            DataInputStream input = new DataInputStream(s1.getInputStream());
-            DataOutputStream output = new DataOutputStream(s1.getOutputStream());
-            output.writeUTF("UNREGISTER " + jTextField1.getText());
-            jTextArea1.append(input.readUTF() + "\n");
-            input.close();
-            output.close();
-            s1.close();
-        } catch (Exception e) {
-            jTextArea1.append("Error: " + e.getMessage() + "\n");
-        }
+            jTextArea1.append(Client.unregister(jTextField3.getText(), Integer.parseInt(jTextField4.getText()), jTextField1.getText()) + "\n");
+        } catch (Exception e) { jTextArea1.append("Error: " + e.getMessage() + "\n"); }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         try {
-            Socket s1 = new Socket(jTextField3.getText(), Integer.parseInt(jTextField4.getText()));
-            DataInputStream input = new DataInputStream(s1.getInputStream());
-            DataOutputStream output = new DataOutputStream(s1.getOutputStream());
-            output.writeUTF("FIND " + jTextField5.getText());
-            jTextArea1.append(input.readUTF() + "\n");
-            input.close();
-            output.close();
-            s1.close();
-        } catch (Exception e) {
-            jTextArea1.append("Error: " + e.getMessage() + "\n");
-        }
+            jTextArea1.append(Client.find(jTextField3.getText(), Integer.parseInt(jTextField4.getText()), jTextField5.getText()) + "\n");
+        } catch (Exception e) { jTextArea1.append("Error: " + e.getMessage() + "\n"); }
     }//GEN-LAST:event_jButton3ActionPerformed
 
     public static void main(String args[]) {
