@@ -4,21 +4,14 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 
-/*
- * Handles one client connection to the Finder Server.
- * Reads one command string and replies, then closes.
- * Commands:
- *   REGISTER name host port  -> OK code  |  ERROR message
- *   FIND name                -> FOUND host port code  |  NOTFOUND
- *   UNREGISTER name code     -> OK  |  ERROR
- */
-public class FinderServer implements Runnable {
-
+public class FinderServer implements Runnable
+{
     Socket cSocket;
     static ArrayList<String[]> clients = new ArrayList<String[]>();
-    // each entry: {name, host, port, code}
+    // each entry: {name, host, port}
 
-    public FinderServer(Socket cSocket) {
+    public FinderServer(Socket cSocket)
+    {
         this.cSocket = cSocket;
     }
 
@@ -31,59 +24,50 @@ public class FinderServer implements Runnable {
             String command = input.readUTF();
 
             if (command.startsWith("REGISTER")) {
-                // REGISTER name host port
+                // format: REGISTER name host port
                 String[] p = command.split(" ");
-                if (p.length < 4) { output.writeUTF("ERROR Invalid format"); input.close(); output.close(); cSocket.close(); return; }
                 String name = p[1], host = p[2], port = p[3];
                 boolean exists = false;
                 for (String[] c : clients) {
                     if (c[0].equals(name)) { exists = true; break; }
                 }
                 if (exists) {
-                    output.writeUTF("ERROR Name already registered");
+                    output.writeUTF("Already registered: " + name);
                 } else {
-                    String code = String.valueOf((int)(Math.random() * 9000) + 1000);
-                    clients.add(new String[]{name, host, port, code});
-                    output.writeUTF("OK " + code);
-                    FinderServerForm.log("Registered: " + name + " at " + host + ":" + port + "  code=" + code);
+                    clients.add(new String[]{name, host, port});
+                    output.writeUTF("Registered: " + name);
+                    FinderServerForm.log("Registered: " + name + " at " + host + ":" + port);
                 }
 
             } else if (command.startsWith("FIND")) {
-                // FIND name
-                String[] p = command.split(" ");
-                if (p.length < 2) { output.writeUTF("ERROR Invalid format"); input.close(); output.close(); cSocket.close(); return; }
-                String name = p[1];
-                boolean found = false;
+                // format: FIND name
+                String name = command.split(" ")[1];
+                String result = "Not found";
                 for (String[] c : clients) {
                     if (c[0].equals(name)) {
-                        output.writeUTF("FOUND " + c[1] + " " + c[2] + " " + c[3]);
-                        FinderServerForm.log("Find: " + name + " -> found");
-                        found = true;
+                        result = c[1] + ":" + c[2];
                         break;
                     }
                 }
-                if (!found) {
-                    output.writeUTF("NOTFOUND");
-                    FinderServerForm.log("Find: " + name + " -> not registered");
-                }
+                output.writeUTF(result);
+                FinderServerForm.log("Find: " + name + " -> " + result);
 
             } else if (command.startsWith("UNREGISTER")) {
-                // UNREGISTER name code
-                String[] p = command.split(" ");
-                if (p.length < 3) { output.writeUTF("ERROR Invalid format"); input.close(); output.close(); cSocket.close(); return; }
-                String name = p[1], code = p[2];
+                // format: UNREGISTER name
+                String name = command.split(" ")[1];
                 boolean removed = false;
                 for (int i = 0; i < clients.size(); i++) {
-                    if (clients.get(i)[0].equals(name) && clients.get(i)[3].equals(code)) {
+                    if (clients.get(i)[0].equals(name)) {
                         clients.remove(i);
-                        output.writeUTF("OK");
-                        FinderServerForm.log("Unregistered: " + name);
                         removed = true;
                         break;
                     }
                 }
-                if (!removed) {
-                    output.writeUTF("ERROR");
+                if (removed) {
+                    output.writeUTF("Unregistered: " + name);
+                    FinderServerForm.log("Unregistered: " + name);
+                } else {
+                    output.writeUTF("Not found: " + name);
                 }
             }
 
