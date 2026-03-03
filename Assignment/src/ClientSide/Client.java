@@ -40,4 +40,16 @@ public class Client {
         s1.close();
         return result;
     }
+
+    public static String connectToPeer(String host, int port, String code) throws IOException {
+        Socket s1 = new Socket(host, port);
+        DataOutputStream out = new DataOutputStream(s1.getOutputStream());
+        DataInputStream input = new DataInputStream(s1.getInputStream());
+        out.writeUTF(code);
+        String result = input.readUTF();
+        input.close();
+        out.close();
+        s1.close();
+        return result;
+    }
 }
