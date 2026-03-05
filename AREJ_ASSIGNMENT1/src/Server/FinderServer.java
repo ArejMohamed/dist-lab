@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  *
@@ -29,6 +30,7 @@ public class FinderServer implements Runnable {
     Socket cSocket;
    static ServerGUI s_GUI;
     static ArrayList<ClientInfo> clients = new ArrayList<ClientInfo>();
+    static final Random random = new Random();
 
     public FinderServer(Socket cSocket) {
         this.cSocket = cSocket;
@@ -53,12 +55,15 @@ DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
                     String ip = input.readUTF();
                     int port = input.readInt();
                     
-                    
-                    ClientInfo c = new ClientInfo(name, ip, port);
+                    int code;
+                    do {
+                        code = random.nextInt(900000) + 100000; // 6-digit unique code
+                    } while (isCodeInUse(code));
+                    ClientInfo c = new ClientInfo(name, ip, port, code);
                     clients.add(c);
 
-                    s_GUI.appendText("Registered: " + name);
-                    out.writeUTF("Client Registered Successfully");
+                    s_GUI.appendText("Registered: " + name + " | code: " + code);
+                    out.writeInt(code); // send code back to registering client
                     break;
 
                 // -------------------- OPTION 2 : FIND CLIENT --------------------
@@ -92,6 +97,13 @@ DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+
+    private static boolean isCodeInUse(int code) {
+        for (ClientInfo cl : clients) {
+            if (cl.getUniqueCode() == code) return true;
+        }
+        return false;
     }
 
     public static void main(String[] args) {

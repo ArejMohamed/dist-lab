@@ -5,29 +5,22 @@
 package Client;
 
 
-import Server.*;
 import Client.ClientInfo;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 /**
  *
  * @author mroja
  */
 
-
-
-
-
-
 public class Client4 implements Runnable {
 
     Socket cSocket;
-   static ServerGUI s_GUI;
+   static ClientGUI c_GUI;
     static ArrayList<ClientInfo> clients = new ArrayList<ClientInfo>();
 
     public Client4(Socket cSocket) {
@@ -40,17 +33,19 @@ public class Client4 implements Runnable {
         try {
             DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
             DataInputStream input = new DataInputStream(cSocket.getInputStream());
-            String message = input.readUTF();
-            
-           while (!message .equals("bye")){
-           
-           
-           out.writeUTF("message");
-               System.out.println("message");
-
-           message = input.readUTF();
-         
-           }
+            int code = input.readInt(); // sender presents code obtained from Finder
+            if (code != c_GUI.getMyCode()) {
+                // invalid code - reject connection
+                out.writeBoolean(false);
+                out.flush();
+                c_GUI.appendText("Connection rejected: invalid code " + code);
+            } else {
+                String senderName = input.readUTF();
+                String message = input.readUTF();
+                out.writeBoolean(true);
+                out.flush();
+                c_GUI.appendText(senderName + " sent you a message saying " + message);
+            }
             input.close();
             out.close();
             cSocket.close();
@@ -64,8 +59,9 @@ public class Client4 implements Runnable {
 
         try {
             ServerSocket sSocket = new ServerSocket(5000);
-            s_GUI = new ServerGUI();
-            s_GUI.setVisible(true);
+            c_GUI = new ClientGUI();
+            c_GUI.setIPAndPort("localhost", 5000);
+            c_GUI.setVisible(true);
 
             System.out.println(" Listening...");
 

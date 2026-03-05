@@ -16,11 +16,25 @@ import java.net.Socket;
 public class ClientGUI extends javax.swing.JFrame {
 
     ClientInfo c;
+    int myCode = -1; // unique code assigned by FinderServer at registration
     /**
      * Creates new form ClientGUI
      */
     public ClientGUI() {
         initComponents();
+    }
+
+    public void appendText(String text) {
+        jTextArea1.append(text + "\n");
+    }
+
+    public int getMyCode() {
+        return myCode;
+    }
+
+    public void setIPAndPort(String ip, int port) {
+        jTextField2.setText(ip);   // ip field
+        jTextField3.setText(String.valueOf(port));  // port field
     }
 
     /**
@@ -184,6 +198,10 @@ public class ClientGUI extends javax.swing.JFrame {
         output.writeUTF(name);
         output.writeUTF(IP);
         output.writeInt(port);
+        output.flush();
+        
+        myCode = input.readInt(); // receive unique code from Finder
+        jTextArea1.append("Registered as " + name + " | your code: " + myCode + "\n");
         
         input.close();
         output.close();
@@ -214,7 +232,7 @@ public class ClientGUI extends javax.swing.JFrame {
           boolean found = input.readBoolean();
 if (found) {
     c = (ClientInfo) input.readObject();
-    jTextArea1.append("Found: " + c.getName() + "\n");
+    jTextArea1.append("Found: " + c.getName() + " with IP " + c.getIP() + "\n");
 } else {
     jTextArea1.append("Not Found\n");
 }
@@ -228,6 +246,7 @@ if (found) {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+       if (c == null) { jTextArea1.append("No client found yet. Use Search first.\n"); return; }
        new Thread(() -> {
         try {
              //connect & send button 
@@ -236,19 +255,19 @@ if (found) {
             
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF("hi");
-           // send once
-        String text = jTextField5.getText();
-        output.writeUTF(text);
-        jTextArea1.append("You: " + text + "\n");
-
-        // then loop only receives
-        String message = input.readUTF();
-        while (!message.equals("bye")) {
-            jTextArea1.append("Client: " + message + "\n");
-            message = input.readUTF();
-           }
-        
+            output.writeInt(c.getUniqueCode()); // present the code obtained from Finder
+            output.writeUTF(jTextField1.getText()); // send sender name
+            String text = jTextField5.getText();
+            output.writeUTF(text);
+            output.flush();
+            
+            boolean accepted = input.readBoolean();
+            if (accepted) {
+                jTextArea1.append("Message sent to " + c.getName() + "\n");
+            } else {
+                jTextArea1.append("Connection rejected by " + c.getName() + " (invalid code)\n");
+            }
+            
             input.close();
             output.close();
             s1.close();
