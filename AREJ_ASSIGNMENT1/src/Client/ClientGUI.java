@@ -23,6 +23,10 @@ public class ClientGUI extends javax.swing.JFrame {
         initComponents();
     }
 
+    public void appendText(String text) {
+        jTextArea1.append(text + "\n");
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -214,7 +218,7 @@ public class ClientGUI extends javax.swing.JFrame {
           boolean found = input.readBoolean();
 if (found) {
     c = (ClientInfo) input.readObject();
-    jTextArea1.append("Found: " + c.getName() + "\n");
+    jTextArea1.append("Found: " + c.getName() + " with IP " + c.getIP() + "\n");
 } else {
     jTextArea1.append("Not Found\n");
 }
@@ -228,6 +232,7 @@ if (found) {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+       if (c == null) { jTextArea1.append("No client found yet. Use Search first.\n"); return; }
        new Thread(() -> {
         try {
              //connect & send button 
@@ -236,18 +241,10 @@ if (found) {
             
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF("hi");
-           // send once
+           output.writeUTF(jTextField1.getText()); // send sender name
         String text = jTextField5.getText();
         output.writeUTF(text);
-        jTextArea1.append("You: " + text + "\n");
-
-        // then loop only receives
-        String message = input.readUTF();
-        while (!message.equals("bye")) {
-            jTextArea1.append("Client: " + message + "\n");
-            message = input.readUTF();
-           }
+        jTextArea1.append("Message sent to " + c.getName() + "\n");
         
             input.close();
             output.close();

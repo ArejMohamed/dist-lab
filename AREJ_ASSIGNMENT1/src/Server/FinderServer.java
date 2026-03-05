@@ -57,7 +57,7 @@ DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
                     ClientInfo c = new ClientInfo(name, ip, port);
                     clients.add(c);
 
-                    s_GUI.appendText("Registered: " + name);
+                    s_GUI.appendText("Client " + name + " is registered with IP " + ip);
                     out.writeUTF("Client Registered Successfully");
                     break;
 

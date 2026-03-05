@@ -5,29 +5,22 @@
 package Client;
 
 
-import Server.*;
 import Client.ClientInfo;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 /**
  *
  * @author mroja
  */
 
-
-
-
-
-
 public class Client1 implements Runnable {
 
     Socket cSocket;
-   static ServerGUI s_GUI;
+   static ClientGUI c_GUI;
     static ArrayList<ClientInfo> clients = new ArrayList<ClientInfo>();
 
     public Client1(Socket cSocket) {
@@ -40,17 +33,9 @@ public class Client1 implements Runnable {
         try {
             DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
             DataInputStream input = new DataInputStream(cSocket.getInputStream());
+            String senderName = input.readUTF();
             String message = input.readUTF();
-            
-           while (!message .equals("bye")){
-           
-           
-           out.writeUTF("message");
-               System.out.println("message");
-
-           message = input.readUTF();
-         
-           }
+            c_GUI.appendText(senderName + " sent you a message saying " + message);
             input.close();
             out.close();
             cSocket.close();
@@ -64,8 +49,8 @@ public class Client1 implements Runnable {
 
         try {
             ServerSocket sSocket = new ServerSocket(2000);
-            s_GUI = new ServerGUI();
-            s_GUI.setVisible(true);
+            c_GUI = new ClientGUI();
+            c_GUI.setVisible(true);
 
             System.out.println(" Listening...");
 
