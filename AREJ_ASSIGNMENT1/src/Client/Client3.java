@@ -28,6 +28,7 @@ public class Client3 implements Runnable {
 
     Socket cSocket;
    static ServerGUI s_GUI;
+    static String myCode;
     static ArrayList<ClientInfo> clients = new ArrayList<ClientInfo>();
 
     public Client3(Socket cSocket) {
@@ -40,6 +41,18 @@ public class Client3 implements Runnable {
         try {
             DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
             DataInputStream input = new DataInputStream(cSocket.getInputStream());
+            
+            String receivedCode = input.readUTF();
+            if (myCode == null || !receivedCode.equals(myCode)) {
+                s_GUI.appendText("Connection REJECTED: Invalid code");
+                out.writeUTF("Rejected: Invalid code");
+                input.close();
+                out.close();
+                cSocket.close();
+                return;
+            }
+            s_GUI.appendText("Connection accepted. Code verified.");
+            
             String message = input.readUTF();
             
            while (!message .equals("bye")){
@@ -63,8 +76,23 @@ public class Client3 implements Runnable {
     public static void main(String[] args) {
 
         try {
+            Socket regSocket = new Socket("localhost", 1000);
+            DataOutputStream regOut = new DataOutputStream(regSocket.getOutputStream());
+            DataInputStream regIn = new DataInputStream(regSocket.getInputStream());
+            regOut.writeInt(1);
+            regOut.writeUTF("Client3");
+            regOut.writeUTF("localhost");
+            regOut.writeInt(4000);
+            myCode = regIn.readUTF();
+            System.out.println("Registered with Finder. Code: " + myCode);
+            regIn.close();
+            regOut.close();
+            regSocket.close();
+
             ServerSocket sSocket = new ServerSocket(4000);
             s_GUI = new ServerGUI();
+            s_GUI.setTitle("Client3 - Port 4000");
+            s_GUI.appendText("Registered. Code: " + myCode);
             s_GUI.setVisible(true);
 
             System.out.println(" Listening...");
