@@ -50,6 +50,7 @@ public class Client2 implements Runnable {
         try {
             ServerSocket sSocket = new ServerSocket(3000);
             c_GUI = new ClientGUI();
+            c_GUI.setIPAndPort("localhost", 3000);
             c_GUI.setVisible(true);
 
             System.out.println(" Listening...");

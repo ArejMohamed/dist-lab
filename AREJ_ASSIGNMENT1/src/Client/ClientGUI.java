@@ -27,6 +27,11 @@ public class ClientGUI extends javax.swing.JFrame {
         jTextArea1.append(text + "\n");
     }
 
+    public void setIPAndPort(String ip, int port) {
+        jTextField2.setText(ip);   // ip field
+        jTextField3.setText(String.valueOf(port));  // port field
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
