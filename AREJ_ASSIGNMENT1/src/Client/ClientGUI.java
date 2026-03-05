@@ -16,7 +16,6 @@ import java.net.Socket;
 public class ClientGUI extends javax.swing.JFrame {
 
     ClientInfo c;
-    private String myCode;
     /**
      * Creates new form ClientGUI
      */
@@ -174,7 +173,6 @@ public class ClientGUI extends javax.swing.JFrame {
         try {
         Socket s1 = new Socket("localhost", 1000);
         DataOutputStream output = new DataOutputStream(s1.getOutputStream());
-        DataInputStream input = new DataInputStream(s1.getInputStream());
         
         output.writeInt(1);
         
@@ -186,10 +184,8 @@ public class ClientGUI extends javax.swing.JFrame {
         output.writeUTF(IP);
         output.writeInt(port);
         
-        myCode = input.readUTF();
-        jTextArea1.append("Registered. My Code: " + myCode + "\n");
+        jTextArea1.append("Registered: " + name + " [IP: " + IP + "]\n");
         
-        input.close();
         output.close();
         s1.close();
         
@@ -240,7 +236,7 @@ if (found) {
             
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF(c.getUniqueCode()); // send unique code for verification
+           output.writeUTF(c.getIP()); // send IP as unique identifier
            output.writeUTF("hi");
            // send once
         String text = jTextField5.getText();

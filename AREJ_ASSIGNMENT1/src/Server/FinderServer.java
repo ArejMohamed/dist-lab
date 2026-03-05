@@ -13,7 +13,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.UUID;
 
 /**
  *
@@ -54,12 +53,10 @@ DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
                     String ip = input.readUTF();
                     int port = input.readInt();
                     
-                    String uniqueCode = UUID.randomUUID().toString();
-                    ClientInfo c = new ClientInfo(name, ip, port, uniqueCode);
+                    ClientInfo c = new ClientInfo(name, ip, port);
                     clients.add(c);
 
-                    s_GUI.appendText("Registered: " + name + " [Code: " + uniqueCode + "]");
-                    out.writeUTF(uniqueCode);
+                    s_GUI.appendText("Registered: " + name + " [IP: " + ip + "]");
                     break;
 
                 // -------------------- OPTION 2 : FIND CLIENT --------------------

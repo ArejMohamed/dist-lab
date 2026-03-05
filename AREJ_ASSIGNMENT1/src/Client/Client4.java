@@ -76,23 +76,22 @@ public class Client4 implements Runnable {
     public static void main(String[] args) {
 
         try {
+            String myIP = "localhost";
             Socket regSocket = new Socket("localhost", 1000);
             DataOutputStream regOut = new DataOutputStream(regSocket.getOutputStream());
-            DataInputStream regIn = new DataInputStream(regSocket.getInputStream());
             regOut.writeInt(1);
             regOut.writeUTF("Client4");
-            regOut.writeUTF("localhost");
+            regOut.writeUTF(myIP);
             regOut.writeInt(5000);
-            myCode = regIn.readUTF();
-            System.out.println("Registered with Finder. Code: " + myCode);
-            regIn.close();
+            myCode = myIP; // IP is the unique code
+            System.out.println("Registered with Finder. IP: " + myCode);
             regOut.close();
             regSocket.close();
 
             ServerSocket sSocket = new ServerSocket(5000);
             s_GUI = new ServerGUI();
             s_GUI.setTitle("Client4 - Port 5000");
-            s_GUI.appendText("Registered. Code: " + myCode);
+            s_GUI.appendText("Registered. IP: " + myCode);
             s_GUI.setVisible(true);
 
             System.out.println(" Listening...");
