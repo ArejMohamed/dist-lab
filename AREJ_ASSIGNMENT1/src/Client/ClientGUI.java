@@ -23,6 +23,10 @@ public class ClientGUI extends javax.swing.JFrame {
         initComponents();
     }
 
+    public void appendText(String text) {
+        jTextArea1.append(text + "\n");
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -214,7 +218,7 @@ public class ClientGUI extends javax.swing.JFrame {
           boolean found = input.readBoolean();
 if (found) {
     c = (ClientInfo) input.readObject();
-    jTextArea1.append("Found: " + c.getName() + "\n");
+    jTextArea1.append("Found at IP: " + c.getIP() + "\n");
 } else {
     jTextArea1.append("Not Found\n");
 }
@@ -230,26 +234,15 @@ if (found) {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
        new Thread(() -> {
         try {
-             //connect & send button 
-            Socket s1 = new Socket(c.getIP(), c.getPort()); 
-            s1.setSoTimeout(2000);
-            
+            Socket s1 = new Socket(c.getIP(), c.getPort());
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF(c.getIP()); // send IP as unique identifier
-           output.writeUTF("hi");
-           // send once
-        String text = jTextField5.getText();
-        output.writeUTF(text);
-        jTextArea1.append("You: " + text + "\n");
-
-        // then loop only receives
-        String message = input.readUTF();
-        while (!message.equals("bye")) {
-            jTextArea1.append("Client: " + message + "\n");
-            message = input.readUTF();
-           }
-        
+            output.writeUTF(c.getIP()); // send IP as identifier
+            String text = jTextField5.getText();
+            output.writeUTF(text);
+            jTextArea1.append("You: " + text + "\n");
+            String reply = input.readUTF();
+            jTextArea1.append("Reply: " + reply + "\n");
             input.close();
             output.close();
             s1.close();

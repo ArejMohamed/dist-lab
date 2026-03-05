@@ -4,66 +4,43 @@
  */
 package Client;
 
-
-import Server.*;
-import Client.ClientInfo;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Scanner;
 
 /**
  *
  * @author mroja
  */
-
-
-
-
-
-
 public class Client2 implements Runnable {
 
     Socket cSocket;
-   static ServerGUI s_GUI;
+    static ClientGUI c_GUI;
     static String myCode;
-    static ArrayList<ClientInfo> clients = new ArrayList<ClientInfo>();
 
     public Client2(Socket cSocket) {
         this.cSocket = cSocket;
     }
 
     @Override
-
-        public void run() {
+    public void run() {
         try {
-            DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
             DataInputStream input = new DataInputStream(cSocket.getInputStream());
-            
-            String receivedCode = input.readUTF();
-            if (myCode == null || !receivedCode.equals(myCode)) {
-                s_GUI.appendText("Connection REJECTED: Invalid code");
-                out.writeUTF("Rejected: Invalid code");
+            DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
+
+            String ip = input.readUTF(); // receive IP as identifier
+            if (!ip.equals(myCode)) {
+                out.writeUTF("Rejected");
                 input.close();
                 out.close();
                 cSocket.close();
                 return;
             }
-            s_GUI.appendText("Connection accepted. Code verified.");
-            
             String message = input.readUTF();
-            
-           while (!message .equals("bye")){
-           
-           
-           out.writeUTF("message");
-               System.out.println("message");
+            c_GUI.appendText("From " + ip + ": " + message);
+            out.writeUTF("Message received");
 
-           message = input.readUTF();
-         
-           }
             input.close();
             out.close();
             cSocket.close();
@@ -83,24 +60,19 @@ public class Client2 implements Runnable {
             regOut.writeUTF("Client2");
             regOut.writeUTF(myIP);
             regOut.writeInt(3000);
-            myCode = myIP; // IP is the unique code
-            System.out.println("Registered with Finder. IP: " + myCode);
+            myCode = myIP;
             regOut.close();
             regSocket.close();
 
             ServerSocket sSocket = new ServerSocket(3000);
-            s_GUI = new ServerGUI();
-            s_GUI.setTitle("Client2 - Port 3000");
-            s_GUI.appendText("Registered. IP: " + myCode);
-            s_GUI.setVisible(true);
-
-            System.out.println(" Listening...");
+            c_GUI = new ClientGUI();
+            c_GUI.setTitle("Client2");
+            c_GUI.appendText("Registered as Client2 at " + myCode + ":3000");
+            c_GUI.setVisible(true);
 
             while (true) {
                 Socket S = sSocket.accept();
-                System.out.println("Connected");
-                Thread Client = new Thread(new Client2(S));
-                Client.start();
+                new Thread(new Client2(S)).start();
             }
 
         } catch (Exception e) {
