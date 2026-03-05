@@ -14,11 +14,13 @@ public class ClientInfo implements Serializable{
     String name;
     String IP;
     int port;
+    int uniqueCode;
 
-    public ClientInfo(String name, String IP, int port) {
+    public ClientInfo(String name, String IP, int port, int uniqueCode) {
         this.name = name;
         this.IP = IP;
         this.port = port;
+        this.uniqueCode = uniqueCode;
     }
 
     public String getName() {
@@ -33,6 +35,10 @@ public class ClientInfo implements Serializable{
         return port;
     }
 
+    public int getUniqueCode() {
+        return uniqueCode;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -43,6 +49,10 @@ public class ClientInfo implements Serializable{
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public void setUniqueCode(int uniqueCode) {
+        this.uniqueCode = uniqueCode;
     }
 
     

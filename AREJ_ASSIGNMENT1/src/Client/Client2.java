@@ -33,9 +33,19 @@ public class Client2 implements Runnable {
         try {
             DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
             DataInputStream input = new DataInputStream(cSocket.getInputStream());
-            String senderName = input.readUTF();
-            String message = input.readUTF();
-            c_GUI.appendText(senderName + " sent you a message saying " + message);
+            int code = input.readInt(); // sender presents code obtained from Finder
+            if (code != c_GUI.getMyCode()) {
+                // invalid code - reject connection
+                out.writeBoolean(false);
+                out.flush();
+                c_GUI.appendText("Connection rejected: invalid code " + code);
+            } else {
+                String senderName = input.readUTF();
+                String message = input.readUTF();
+                out.writeBoolean(true);
+                out.flush();
+                c_GUI.appendText(senderName + " sent you a message saying " + message);
+            }
             input.close();
             out.close();
             cSocket.close();

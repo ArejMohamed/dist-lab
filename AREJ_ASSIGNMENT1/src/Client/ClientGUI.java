@@ -16,6 +16,7 @@ import java.net.Socket;
 public class ClientGUI extends javax.swing.JFrame {
 
     ClientInfo c;
+    int myCode = -1; // unique code assigned by FinderServer at registration
     /**
      * Creates new form ClientGUI
      */
@@ -25,6 +26,10 @@ public class ClientGUI extends javax.swing.JFrame {
 
     public void appendText(String text) {
         jTextArea1.append(text + "\n");
+    }
+
+    public int getMyCode() {
+        return myCode;
     }
 
     public void setIPAndPort(String ip, int port) {
@@ -193,6 +198,10 @@ public class ClientGUI extends javax.swing.JFrame {
         output.writeUTF(name);
         output.writeUTF(IP);
         output.writeInt(port);
+        output.flush();
+        
+        myCode = input.readInt(); // receive unique code from Finder
+        jTextArea1.append("Registered as " + name + " | your code: " + myCode + "\n");
         
         input.close();
         output.close();
@@ -246,11 +255,19 @@ if (found) {
             
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF(jTextField1.getText()); // send sender name
-        String text = jTextField5.getText();
-        output.writeUTF(text);
-        jTextArea1.append("Message sent to " + c.getName() + "\n");
-        
+            output.writeInt(c.getUniqueCode()); // present the code obtained from Finder
+            output.writeUTF(jTextField1.getText()); // send sender name
+            String text = jTextField5.getText();
+            output.writeUTF(text);
+            output.flush();
+            
+            boolean accepted = input.readBoolean();
+            if (accepted) {
+                jTextArea1.append("Message sent to " + c.getName() + "\n");
+            } else {
+                jTextArea1.append("Connection rejected by " + c.getName() + " (invalid code)\n");
+            }
+            
             input.close();
             output.close();
             s1.close();
