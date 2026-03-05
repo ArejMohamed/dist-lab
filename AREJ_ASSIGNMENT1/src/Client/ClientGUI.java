@@ -7,6 +7,7 @@ package Client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
@@ -16,11 +17,16 @@ import java.net.Socket;
 public class ClientGUI extends javax.swing.JFrame {
 
     ClientInfo c;
+    String myCode;
     /**
      * Creates new form ClientGUI
      */
     public ClientGUI() {
         initComponents();
+    }
+
+    public void appendText(String text) {
+        jTextArea1.append(text + "\n");
     }
 
     /**
@@ -169,30 +175,63 @@ public class ClientGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-          //register button
         try {
-        Socket s1 = new Socket("localhost", 1000);
-        DataOutputStream output = new DataOutputStream(s1.getOutputStream());
-        DataInputStream input = new DataInputStream(s1.getInputStream());
-        
-        output.writeInt(1);
-        
-        String name = jTextField1.getText();   
-        String IP = jTextField2.getText();     
-        int port = Integer.parseInt(jTextField3.getText());
-        
-        output.writeUTF(name);
-        output.writeUTF(IP);
-        output.writeInt(port);
-        
-        input.close();
-        output.close();
-        s1.close();
-        
-    } catch (Exception e) {
-        System.out.println(e);
-    }
+            String name = jTextField1.getText();
+            String IP = jTextField2.getText();
+            int port = Integer.parseInt(jTextField3.getText());
+
+            // Register with finder server
+            Socket s1 = new Socket("localhost", 1000);
+            DataOutputStream output = new DataOutputStream(s1.getOutputStream());
+            output.writeInt(1);
+            output.writeUTF(name);
+            output.writeUTF(IP);
+            output.writeInt(port);
+            output.close();
+            s1.close();
+
+            myCode = IP;
+            jTextArea1.append("Registered: " + name + " at " + IP + ":" + port + "\n");
+
+            // Start listening for incoming connections
+            startListening(port);
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void startListening(int port) {
+        new Thread(() -> {
+            try {
+                java.net.ServerSocket sSocket = new java.net.ServerSocket(port);
+                while (true) {
+                    Socket s = sSocket.accept();
+                    new Thread(() -> {
+                        try {
+                            DataInputStream in = new DataInputStream(s.getInputStream());
+                            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                            String ip = in.readUTF();
+                            if (!ip.equals(myCode)) {
+                                out.writeUTF("Rejected");
+                                in.close(); out.close(); s.close();
+                                return;
+                            }
+                            String message = in.readUTF();
+                            javax.swing.SwingUtilities.invokeLater(() ->
+                                jTextArea1.append("From " + ip + ": " + message + "\n"));
+                            out.writeUTF("Message received");
+                            in.close(); out.close(); s.close();
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }).start();
+                }
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        }).start();
+    }
 
     private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
         // TODO add your handling code here:
@@ -214,7 +253,7 @@ public class ClientGUI extends javax.swing.JFrame {
           boolean found = input.readBoolean();
 if (found) {
     c = (ClientInfo) input.readObject();
-    jTextArea1.append("Found: " + c.getName() + "\n");
+    jTextArea1.append("Found at IP: " + c.getIP() + "\n");
 } else {
     jTextArea1.append("Not Found\n");
 }
@@ -230,25 +269,15 @@ if (found) {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
        new Thread(() -> {
         try {
-             //connect & send button 
-            Socket s1 = new Socket(c.getIP(), c.getPort()); 
-            s1.setSoTimeout(2000);
-            
+            Socket s1 = new Socket(c.getIP(), c.getPort());
             DataOutputStream output = new DataOutputStream(s1.getOutputStream());
             DataInputStream input = new DataInputStream(s1.getInputStream());
-           output.writeUTF("hi");
-           // send once
-        String text = jTextField5.getText();
-        output.writeUTF(text);
-        jTextArea1.append("You: " + text + "\n");
-
-        // then loop only receives
-        String message = input.readUTF();
-        while (!message.equals("bye")) {
-            jTextArea1.append("Client: " + message + "\n");
-            message = input.readUTF();
-           }
-        
+            output.writeUTF(c.getIP()); // send IP as identifier
+            String text = jTextField5.getText();
+            output.writeUTF(text);
+            jTextArea1.append("You: " + text + "\n");
+            String reply = input.readUTF();
+            jTextArea1.append("Reply: " + reply + "\n");
             input.close();
             output.close();
             s1.close();

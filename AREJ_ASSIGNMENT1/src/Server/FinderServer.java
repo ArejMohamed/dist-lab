@@ -53,12 +53,10 @@ DataOutputStream out = new DataOutputStream(cSocket.getOutputStream());
                     String ip = input.readUTF();
                     int port = input.readInt();
                     
-                    
                     ClientInfo c = new ClientInfo(name, ip, port);
                     clients.add(c);
 
-                    s_GUI.appendText("Registered: " + name);
-                    out.writeUTF("Client Registered Successfully");
+                    s_GUI.appendText("Registered: " + name + " [IP: " + ip + "]");
                     break;
 
                 // -------------------- OPTION 2 : FIND CLIENT --------------------
