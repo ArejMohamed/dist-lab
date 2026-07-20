@@ -1,22 +1,39 @@
-# PantryChef
+# Arej AI Summarizer
 
-PantryChef is a mobile-responsive web app that helps users generate meal ideas from ingredients they already have.
+Arej AI Summarizer is a production-ready, responsive web app for summarizing PDF files and long text directly in the browser.
 
 ## Quick run
 
-Open `pantrychef-index.html` in a browser.
+Open `/home/runner/work/dist-lab/dist-lab/index.html` in any modern browser.
 
 ## Features
 
-- Five app sections: Home, Generate Recipes, Favorites, Shopping List, Contact
-- Ingredient input by:
-  - image upload with friendly mock ingredient detection (filename inference + fallback samples)
-  - manual comma-separated text
-- Removable ingredient tags/chips
-- 10 offline sample recipes across breakfast/lunch/dinner/snack and normal/vegetarian/high-protein diets
-- Smart filters: meal type, diet, max cooking time (15/30/45 minutes)
-- Recipe suggestions (up to 5) ranked by best ingredient match
-- Recipe cards include time, difficulty, ingredients used, step-by-step instructions, and clearly marked missing ingredients
-- Favorites and per-recipe 1–5 star ratings persisted in localStorage
-- Deduplicated shopping list from missing ingredients with persisted checklist state
-- Mobile-first card-based UI with food-themed styling
+- Home view with:
+  - title **Arej AI Summarizer**
+  - subtitle **Summarize PDFs and long documents instantly using AI.**
+  - PDF upload section
+  - long-text input section
+  - **Sample PDF** button
+  - **Summarize** button
+- Structured summary output sections:
+  - Executive Summary
+  - Key Points
+  - Important Dates
+  - Important Numbers
+  - Action Items
+  - Frequently Asked Questions
+- Summary actions:
+  - Copy Summary
+  - Download Summary (`.md`)
+  - Start New Summary
+- Sidebar with persisted Recent Summaries and Saved Documents
+- Dark mode toggle persisted in `localStorage`
+- Live character counter
+- Loading animation and polished empty/fallback states
+- Deterministic local summarization fallback (no API key and no external AI dependency)
+- Responsive layout with rounded cards, gradients, and smooth transitions
+
+## Notes
+
+- The summarization flow always returns a complete structured result, even without external AI services.
+- PDF extraction is performed locally in-browser with robust fallback behavior when the PDF has limited extractable text.

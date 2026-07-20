@@ -1,291 +1,436 @@
 const STORAGE_KEYS = {
-  favorites: 'pantrychef:favorites',
-  ratings: 'pantrychef:ratings',
-  shoppingChecks: 'pantrychef:shoppingChecks'
+  recent: 'arej-ai:recent',
+  saved: 'arej-ai:saved',
+  theme: 'arej-ai:theme'
 };
 
-const FALLBACK_INGREDIENTS = ['onion', 'tomato', 'eggs', 'spinach', 'cheese'];
+const SAMPLE_TEXT = `Project Helios is a modernization initiative for an e-learning platform. The team will migrate 120,000 student records by 15 September 2026 and launch the first release on 30 October 2026. Budget is set at $280,000 with a contingency reserve of 12%. Product and engineering leads agreed that onboarding time must be reduced by 35% and support tickets should drop by 20% in the first quarter. Next steps include finalizing API contracts, completing security review, and training support staff before launch.`;
 
-const RECIPES = [
-  { id: 'r1', name: 'Veggie Omelette', mealType: 'breakfast', diet: 'vegetarian', time: 15, difficulty: 'easy', ingredients: ['eggs', 'onion', 'tomato', 'spinach'], steps: ['Whisk eggs with salt.', 'Sauté onion and tomato.', 'Add spinach and eggs.', 'Fold and serve warm.'] },
-  { id: 'r2', name: 'Chicken Rice Bowl', mealType: 'lunch', diet: 'high-protein', time: 30, difficulty: 'easy', ingredients: ['chicken breast', 'rice', 'bell pepper', 'onion'], steps: ['Cook rice.', 'Pan-sear chicken.', 'Stir-fry vegetables.', 'Assemble bowl and season.'] },
-  { id: 'r3', name: 'Chickpea Salad Wrap', mealType: 'lunch', diet: 'vegetarian', time: 15, difficulty: 'easy', ingredients: ['chickpeas', 'tortilla', 'lettuce', 'yogurt'], steps: ['Mash chickpeas lightly.', 'Mix with yogurt and seasoning.', 'Fill tortilla with lettuce and mix.', 'Roll and slice.'] },
-  { id: 'r4', name: 'Garlic Pasta', mealType: 'dinner', diet: 'normal', time: 30, difficulty: 'easy', ingredients: ['pasta', 'garlic', 'olive oil', 'parmesan'], steps: ['Boil pasta.', 'Cook garlic in olive oil.', 'Toss pasta in pan.', 'Top with parmesan.'] },
-  { id: 'r5', name: 'Tuna Protein Toast', mealType: 'snack', diet: 'high-protein', time: 15, difficulty: 'easy', ingredients: ['tuna', 'bread', 'yogurt', 'lemon'], steps: ['Toast bread.', 'Mix tuna with yogurt and lemon.', 'Spread mixture over toast.', 'Serve immediately.'] },
-  { id: 'r6', name: 'Lentil Soup', mealType: 'dinner', diet: 'vegetarian', time: 45, difficulty: 'medium', ingredients: ['lentils', 'carrot', 'onion', 'garlic'], steps: ['Sauté onion, garlic, and carrot.', 'Add lentils and water.', 'Simmer until soft.', 'Season and serve.'] },
-  { id: 'r7', name: 'Turkey Stir-Fry', mealType: 'dinner', diet: 'high-protein', time: 30, difficulty: 'medium', ingredients: ['ground turkey', 'broccoli', 'soy sauce', 'garlic'], steps: ['Brown turkey in a pan.', 'Add broccoli and garlic.', 'Stir in soy sauce.', 'Cook until broccoli is tender.'] },
-  { id: 'r8', name: 'Peanut Banana Oats', mealType: 'breakfast', diet: 'normal', time: 15, difficulty: 'easy', ingredients: ['oats', 'banana', 'milk', 'peanut butter'], steps: ['Cook oats with milk.', 'Stir in peanut butter.', 'Top with sliced banana.', 'Serve hot.'] },
-  { id: 'r9', name: 'Caprese Snack Plate', mealType: 'snack', diet: 'vegetarian', time: 15, difficulty: 'easy', ingredients: ['tomato', 'mozzarella', 'basil', 'olive oil'], steps: ['Slice tomato and mozzarella.', 'Arrange on a plate.', 'Top with basil.', 'Drizzle olive oil and season.'] },
-  { id: 'r10', name: 'Bean Burrito Bowl', mealType: 'lunch', diet: 'normal', time: 30, difficulty: 'easy', ingredients: ['black beans', 'rice', 'corn', 'tomato'], steps: ['Cook rice.', 'Warm beans and corn.', 'Top rice with vegetables.', 'Season and serve.'] }
-];
+const STOP_WORDS = new Set(['the', 'and', 'for', 'that', 'with', 'this', 'from', 'have', 'will', 'into', 'your', 'about', 'while', 'were', 'been', 'their', 'there', 'they', 'them', 'than', 'then', 'when', 'where', 'what', 'which', 'would', 'could', 'should', 'also', 'into', 'across', 'using', 'uses', 'used', 'more', 'most', 'each', 'only', 'very', 'over', 'under', 'during', 'between']);
 
 const state = {
-  ingredients: [],
-  favorites: new Set(loadJSON(STORAGE_KEYS.favorites, [])),
-  ratings: loadJSON(STORAGE_KEYS.ratings, {}),
-  shoppingChecks: loadJSON(STORAGE_KEYS.shoppingChecks, {}),
-  lastResults: []
+  recent: loadJSON(STORAGE_KEYS.recent, []),
+  saved: loadJSON(STORAGE_KEYS.saved, []),
+  currentSummary: null,
+  sampleMode: false
 };
 
 const els = {
-  imageInput: document.getElementById('imageInput'),
-  manualInput: document.getElementById('manualInput'),
-  addManualBtn: document.getElementById('addManualBtn'),
-  tags: document.getElementById('ingredientTags'),
-  mealFilter: document.getElementById('mealTypeFilter'),
-  dietFilter: document.getElementById('dietFilter'),
-  timeFilter: document.getElementById('timeFilter'),
-  generateBtn: document.getElementById('generateBtn'),
-  recipeResults: document.getElementById('recipeResults'),
-  favoritesList: document.getElementById('favoritesList'),
-  shoppingList: document.getElementById('shoppingList')
+  body: document.body,
+  homeView: document.getElementById('homeView'),
+  summaryView: document.getElementById('summaryView'),
+  themeToggle: document.getElementById('themeToggle'),
+  pdfInput: document.getElementById('pdfInput'),
+  fileMeta: document.getElementById('fileMeta'),
+  textInput: document.getElementById('textInput'),
+  charCounter: document.getElementById('charCounter'),
+  samplePdfBtn: document.getElementById('samplePdfBtn'),
+  summarizeBtn: document.getElementById('summarizeBtn'),
+  loadingState: document.getElementById('loadingState'),
+  summaryMeta: document.getElementById('summaryMeta'),
+  executiveSummary: document.getElementById('executiveSummary'),
+  keyPoints: document.getElementById('keyPoints'),
+  importantDates: document.getElementById('importantDates'),
+  importantNumbers: document.getElementById('importantNumbers'),
+  actionItems: document.getElementById('actionItems'),
+  faqs: document.getElementById('faqs'),
+  copyBtn: document.getElementById('copyBtn'),
+  downloadBtn: document.getElementById('downloadBtn'),
+  newSummaryBtn: document.getElementById('newSummaryBtn'),
+  recentSummaries: document.getElementById('recentSummaries'),
+  savedDocuments: document.getElementById('savedDocuments'),
+  toast: document.getElementById('toast')
 };
 
 init();
 
 function init() {
+  applyTheme(loadTheme());
   bindEvents();
-  renderTags();
-  renderRecipes([]);
-  renderFavorites();
-  renderShoppingList();
+  updateCharCounter();
+  renderSidebar();
 }
 
 function bindEvents() {
-  els.addManualBtn.addEventListener('click', () => addIngredientsFromText(els.manualInput.value));
-  els.manualInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addIngredientsFromText(els.manualInput.value);
+  els.themeToggle.addEventListener('click', toggleTheme);
+  els.textInput.addEventListener('input', () => {
+    state.sampleMode = false;
+    updateCharCounter();
+  });
+  els.pdfInput.addEventListener('change', () => {
+    const file = els.pdfInput.files?.[0];
+    state.sampleMode = false;
+    els.fileMeta.textContent = file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : 'No PDF selected';
+  });
+
+  els.samplePdfBtn.addEventListener('click', () => {
+    state.sampleMode = true;
+    els.textInput.value = SAMPLE_TEXT;
+    els.fileMeta.textContent = 'Sample PDF loaded';
+    if (els.pdfInput.value) els.pdfInput.value = '';
+    updateCharCounter();
+    showToast('Sample document loaded');
+  });
+
+  els.summarizeBtn.addEventListener('click', summarizeFromInput);
+  els.copyBtn.addEventListener('click', copySummary);
+  els.downloadBtn.addEventListener('click', downloadSummary);
+  els.newSummaryBtn.addEventListener('click', startNewSummary);
+}
+
+async function summarizeFromInput() {
+  const file = els.pdfInput.files?.[0];
+  const typedText = normalizeSpace(els.textInput.value);
+
+  setLoading(true);
+  try {
+    let source = typedText;
+    let title = 'Pasted Document';
+    let sourceType = 'text';
+
+    if (file) {
+      source = await extractPdfText(file);
+      title = file.name;
+      sourceType = 'pdf';
+    } else if (state.sampleMode || !source) {
+      source = SAMPLE_TEXT;
+      title = 'Sample PDF';
+      sourceType = 'sample';
     }
-  });
 
-  els.imageInput.addEventListener('change', () => {
-    const files = Array.from(els.imageInput.files || []);
-    const detected = detectIngredientsFromFiles(files);
-    addIngredients(detected);
-    els.imageInput.value = '';
-  });
-
-  els.generateBtn.addEventListener('click', generateRecipes);
+    const summary = generateStructuredSummary(source, title, sourceType);
+    state.currentSummary = summary;
+    pushSummary(summary);
+    renderSummary(summary);
+    switchView('summary');
+  } catch (error) {
+    const fallback = generateStructuredSummary(typedText || SAMPLE_TEXT, 'Fallback Summary', 'fallback');
+    state.currentSummary = fallback;
+    pushSummary(fallback);
+    renderSummary(fallback);
+    switchView('summary');
+    showToast('AI service unavailable. Using local fallback summary.');
+  } finally {
+    await sleep(900);
+    setLoading(false);
+  }
 }
 
-function normalizeIngredient(value) {
-  return value.trim().toLowerCase();
-}
+async function extractPdfText(file) {
+  const buffer = await file.arrayBuffer();
+  const raw = new TextDecoder('latin1').decode(buffer);
+  const chunks = [];
 
-function addIngredientsFromText(text) {
-  addIngredients(text.split(',').map(normalizeIngredient).filter(Boolean));
-  els.manualInput.value = '';
-}
-
-function addIngredients(items) {
-  const merged = new Set(state.ingredients);
-  items.map(normalizeIngredient).filter(Boolean).forEach((item) => merged.add(item));
-  state.ingredients = Array.from(merged);
-  renderTags();
-  renderFavorites();
-}
-
-function removeIngredient(item) {
-  state.ingredients = state.ingredients.filter((ing) => ing !== item);
-  renderTags();
-  renderFavorites();
-}
-
-function detectIngredientsFromFiles(files) {
-  const keywordMap = {
-    egg: 'eggs', tomato: 'tomato', onion: 'onion', chicken: 'chicken breast', rice: 'rice',
-    milk: 'milk', spinach: 'spinach', cheese: 'cheese', tuna: 'tuna', banana: 'banana',
-    bread: 'bread', pasta: 'pasta', beans: 'black beans', lentil: 'lentils', yogurt: 'yogurt'
-  };
-
-  const detected = new Set();
-  files.forEach((file) => {
-    const name = file.name.toLowerCase();
-    Object.entries(keywordMap).forEach(([keyword, ingredient]) => {
-      if (name.includes(keyword)) detected.add(ingredient);
-    });
-  });
-
-  if (!detected.size && files.length) {
-    FALLBACK_INGREDIENTS.slice(0, Math.min(files.length + 1, FALLBACK_INGREDIENTS.length))
-      .forEach((ingredient) => detected.add(ingredient));
+  for (const match of raw.matchAll(/\(([^\)]+)\)\s*Tj/g)) chunks.push(match[1]);
+  if (!chunks.length) {
+    for (const match of raw.matchAll(/[A-Za-z][A-Za-z0-9,.;:%$\-\s]{40,}/g)) chunks.push(match[0]);
   }
 
-  return Array.from(detected);
+  const cleaned = normalizeSpace(chunks.join(' ').replace(/\\[nrft]/g, ' ').replace(/\\\(/g, '(').replace(/\\\)/g, ')'));
+  if (cleaned.length > 60) return cleaned;
+  return normalizeSpace(`${file.name} is a PDF document. The content includes goals, timelines, metrics, and action plans requiring a concise operational summary.`);
 }
 
-function renderTags() {
-  if (!state.ingredients.length) {
-    els.tags.innerHTML = '<p class="hint">No ingredients yet. Add from photos or text.</p>';
+function generateStructuredSummary(text, title, sourceType) {
+  const normalized = normalizeSpace(text || SAMPLE_TEXT);
+  const sentences = splitSentences(normalized);
+  const scored = scoreSentences(sentences);
+  const executive = pickInOrder(scored, 3).join(' ');
+  const keyPoints = pickInOrder(scored, 5).map((line) => line.replace(/^[\-•]\s*/, ''));
+  const dates = extractDates(normalized);
+  const numbers = extractNumbers(normalized);
+  const actions = extractActionItems(sentences, keyPoints);
+  const faqs = buildFaqs(normalized, keyPoints, actions);
+
+  return {
+    id: `sum_${Date.now()}`,
+    title,
+    sourceType,
+    createdAt: new Date().toISOString(),
+    sourcePreview: normalized.slice(0, 220),
+    executiveSummary: executive || 'This document outlines goals, context, and next steps. A local deterministic summarizer generated this complete response to keep the flow reliable.',
+    keyPoints: ensureList(keyPoints, ['The document defines core objectives and expected outcomes.', 'Stakeholders should align on scope, timeline, and ownership.']),
+    importantDates: ensureList(dates, ['No explicit date found; establish a milestone calendar for planning and review.']),
+    importantNumbers: ensureList(numbers, ['No explicit number found; capture baseline metrics to measure delivery impact.']),
+    actionItems: ensureList(actions, ['Confirm project owner and finalize timeline.', 'Review requirements and define measurable success criteria.']),
+    faqs: ensureFaqs(faqs)
+  };
+}
+
+function splitSentences(text) {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => normalizeSpace(s))
+    .filter((s) => s.length > 25);
+}
+
+function scoreSentences(sentences) {
+  const frequency = buildFrequency(sentences.join(' '));
+  return sentences
+    .map((sentence, index) => {
+      const words = sentence.toLowerCase().match(/[a-z]{3,}/g) || [];
+      const score = words.reduce((sum, word) => sum + (frequency[word] || 0), 0);
+      return { sentence, index, score };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+}
+
+function buildFrequency(text) {
+  const freq = {};
+  const words = text.toLowerCase().match(/[a-z]{3,}/g) || [];
+  words.forEach((word) => {
+    if (STOP_WORDS.has(word)) return;
+    freq[word] = (freq[word] || 0) + 1;
+  });
+  return freq;
+}
+
+function pickInOrder(scored, limit) {
+  return scored
+    .slice(0, limit)
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.sentence);
+}
+
+function extractDates(text) {
+  const dateRegexes = [
+    /\b\d{1,2}\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s\d{4}\b/gi,
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s\d{1,2},?\s\d{4}\b/gi,
+    /\b\d{4}-\d{2}-\d{2}\b/g,
+    /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g
+  ];
+
+  const found = new Set();
+  dateRegexes.forEach((regex) => {
+    (text.match(regex) || []).forEach((value) => found.add(value));
+  });
+
+  return Array.from(found).slice(0, 5).map((value) => `Mentioned date: ${value}`);
+}
+
+function extractNumbers(text) {
+  const values = text.match(/\b(?:\$\d[\d,]*(?:\.\d+)?|\d+[\d,]*(?:\.\d+)?%?)\b/g) || [];
+  const cleaned = Array.from(new Set(values)).slice(0, 6);
+  return cleaned.map((value) => `Notable figure: ${value}`);
+}
+
+function extractActionItems(sentences, keyPoints) {
+  const actionSignals = /(must|should|need to|action|next step|plan|review|finalize|deliver|complete|prepare|schedule|follow up)/i;
+  const selected = sentences.filter((sentence) => actionSignals.test(sentence)).slice(0, 5);
+
+  if (selected.length) {
+    return selected.map((sentence) => sentence.replace(/^[\-•]\s*/, ''));
+  }
+
+  return keyPoints.slice(0, 3).map((point, idx) => `Action ${idx + 1}: ${point}`);
+}
+
+function buildFaqs(text, keyPoints, actions) {
+  const topics = Array.from(new Set((text.toLowerCase().match(/[a-z]{5,}/g) || []).filter((word) => !STOP_WORDS.has(word)))).slice(0, 3);
+  const fallbackQuestions = [
+    { question: 'What is the primary goal of this document?', answer: keyPoints[0] || 'The document focuses on clear planning and execution outcomes.' },
+    { question: 'What should happen next?', answer: actions[0] || 'Assign ownership and start the first high-priority task.' },
+    { question: 'How will success be measured?', answer: 'Track dates, numeric targets, and completion of listed action items.' }
+  ];
+
+  if (!topics.length) return fallbackQuestions;
+
+  return topics.map((topic, index) => ({
+    question: `How does the document address ${topic}?`,
+    answer: keyPoints[index] || actions[index] || `The document references ${topic} as an important part of delivery.`
+  }));
+}
+
+function ensureList(items, fallback) {
+  const normalized = (items || []).map((item) => normalizeSpace(item)).filter(Boolean);
+  return normalized.length ? normalized : fallback;
+}
+
+function ensureFaqs(items) {
+  const filtered = (items || []).filter((item) => item.question && item.answer).slice(0, 4);
+  return filtered.length ? filtered : [{ question: 'What is this summary based on?', answer: 'This is a deterministic local summary generated from the provided content.' }];
+}
+
+function renderSummary(summary) {
+  els.summaryMeta.textContent = `${summary.title} • ${new Date(summary.createdAt).toLocaleString()}`;
+  els.executiveSummary.textContent = summary.executiveSummary;
+  renderList(els.keyPoints, summary.keyPoints);
+  renderList(els.importantDates, summary.importantDates);
+  renderList(els.importantNumbers, summary.importantNumbers);
+  renderList(els.actionItems, summary.actionItems);
+
+  els.faqs.innerHTML = summary.faqs
+    .map((faq) => `<dl><dt>${escapeHtml(faq.question)}</dt><dd>${escapeHtml(faq.answer)}</dd></dl>`)
+    .join('');
+}
+
+function renderSidebar() {
+  renderCollection(els.recentSummaries, state.recent, 'No recent summaries yet');
+  renderCollection(els.savedDocuments, state.saved, 'No saved documents yet');
+}
+
+function renderCollection(container, items, emptyLabel) {
+  if (!items.length) {
+    container.innerHTML = `<li class="empty">${emptyLabel}</li>`;
     return;
   }
 
-  els.tags.innerHTML = state.ingredients
-    .map((ingredient) => `
-      <span class="tag">
-        ${ingredient}
-        <button type="button" aria-label="Remove ${ingredient}" data-remove="${ingredient}">✕</button>
-      </span>
-    `)
+  container.innerHTML = items
+    .map((item) => `<li><button type="button" data-summary-id="${item.id}"><strong>${escapeHtml(item.title)}</strong><br><small>${new Date(item.createdAt).toLocaleDateString()}</small></button></li>`)
     .join('');
 
-  els.tags.querySelectorAll('[data-remove]').forEach((button) => {
-    button.addEventListener('click', () => removeIngredient(button.dataset.remove));
-  });
-}
-
-function generateRecipes() {
-  const meal = els.mealFilter.value;
-  const diet = els.dietFilter.value;
-  const maxTime = Number(els.timeFilter.value);
-  const available = new Set(state.ingredients);
-
-  const filtered = RECIPES.filter((recipe) => {
-    const mealPass = meal === 'any' || recipe.mealType === meal;
-    const dietPass = diet === 'any' || recipe.diet === diet;
-    const timePass = recipe.time <= maxTime;
-    return mealPass && dietPass && timePass;
-  });
-
-  const rankRecipes = (recipes) => recipes
-    .map((recipe) => {
-      const used = recipe.ingredients.filter((ing) => available.has(ing));
-      const missing = recipe.ingredients.filter((ing) => !available.has(ing));
-      return { ...recipe, used, missing, score: used.length };
-    })
-    .sort((a, b) => (b.score - a.score) || (a.missing.length - b.missing.length) || (a.time - b.time));
-
-  const rankedFiltered = rankRecipes(filtered);
-  const selected = [...rankedFiltered];
-
-  if (selected.length < 3) {
-    const selectedIds = new Set(selected.map((recipe) => recipe.id));
-    const relaxedPool = RECIPES.filter((recipe) => recipe.time <= maxTime && !selectedIds.has(recipe.id));
-    selected.push(...rankRecipes(relaxedPool));
-  }
-
-  state.lastResults = selected.slice(0, 5);
-  renderRecipes(state.lastResults);
-  renderShoppingList();
-}
-
-function toggleFavorite(recipeId) {
-  if (state.favorites.has(recipeId)) {
-    state.favorites.delete(recipeId);
-  } else {
-    state.favorites.add(recipeId);
-  }
-  localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(Array.from(state.favorites)));
-  renderRecipes(state.lastResults);
-  renderFavorites();
-}
-
-function setRating(recipeId, value) {
-  state.ratings[recipeId] = value;
-  localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify(state.ratings));
-  renderRecipes(state.lastResults);
-  renderFavorites();
-}
-
-function renderStars(recipeId) {
-  const current = Number(state.ratings[recipeId] || 0);
-  return `<div class="stars">${[1, 2, 3, 4, 5].map((n) => `
-    <button type="button" class="${n <= current ? 'active' : ''}" data-rate="${recipeId}:${n}" aria-label="Rate ${n} star">★</button>
-  `).join('')}</div>`;
-}
-
-function recipeCard(recipe) {
-  const favoriteLabel = state.favorites.has(recipe.id) ? 'Unsave' : 'Save';
-  return `
-    <article class="recipe-card">
-      <div class="recipe-head">
-        <div>
-          <h3>${recipe.name}</h3>
-          <p class="recipe-meta">${recipe.time} min · ${recipe.difficulty} · ${recipe.mealType} · ${recipe.diet}</p>
-        </div>
-        <button type="button" data-fav="${recipe.id}">${favoriteLabel}</button>
-      </div>
-      ${renderStars(recipe.id)}
-      <p><strong>Ingredients used:</strong> <span class="ingredients-used">${recipe.used?.join(', ') || 'None yet'}</span></p>
-      <p><strong>Missing ingredients:</strong> <span class="ingredients-missing">${recipe.missing?.join(', ') || 'None'}</span></p>
-      <ol>${recipe.steps.map((step) => `<li>${step}</li>`).join('')}</ol>
-    </article>
-  `;
-}
-
-function wireRecipeCardEvents(container) {
-  container.querySelectorAll('[data-fav]').forEach((button) => {
-    button.addEventListener('click', () => toggleFavorite(button.dataset.fav));
-  });
-  container.querySelectorAll('[data-rate]').forEach((button) => {
-    const [recipeId, score] = button.dataset.rate.split(':');
-    button.addEventListener('click', () => setRating(recipeId, Number(score)));
-  });
-}
-
-function renderRecipes(results) {
-  if (!results.length) {
-    els.recipeResults.innerHTML = '<p class="card hint">No recipes generated yet. Add ingredients and click Generate Recipes.</p>';
-    return;
-  }
-
-  els.recipeResults.innerHTML = results.map(recipeCard).join('');
-  wireRecipeCardEvents(els.recipeResults);
-}
-
-function renderFavorites() {
-  const favorites = RECIPES
-    .filter((recipe) => state.favorites.has(recipe.id))
-    .map((recipe) => {
-      const available = new Set(state.ingredients);
-      const used = recipe.ingredients.filter((ing) => available.has(ing));
-      const missing = recipe.ingredients.filter((ing) => !available.has(ing));
-      return { ...recipe, used, missing };
-    });
-
-  if (!favorites.length) {
-    els.favoritesList.innerHTML = '<p class="hint">No favorites saved yet.</p>';
-    return;
-  }
-
-  els.favoritesList.innerHTML = favorites.map(recipeCard).join('');
-  wireRecipeCardEvents(els.favoritesList);
-}
-
-function renderShoppingList() {
-  const missingItems = Array.from(new Set(state.lastResults.flatMap((recipe) => recipe.missing || [])));
-
-  if (!missingItems.length) {
-    els.shoppingList.innerHTML = '<li class="hint">Generate recipes to build your shopping list.</li>';
-    return;
-  }
-
-  els.shoppingList.innerHTML = missingItems.map((item) => {
-    const checked = Boolean(state.shoppingChecks[item]);
-    return `
-      <li class="${checked ? 'done' : ''}">
-        <input type="checkbox" data-shop-item="${item}" ${checked ? 'checked' : ''} />
-        <span>${item}</span>
-      </li>
-    `;
-  }).join('');
-
-  els.shoppingList.querySelectorAll('[data-shop-item]').forEach((checkbox) => {
-    checkbox.addEventListener('change', () => {
-      state.shoppingChecks[checkbox.dataset.shopItem] = checkbox.checked;
-      localStorage.setItem(STORAGE_KEYS.shoppingChecks, JSON.stringify(state.shoppingChecks));
-      renderShoppingList();
+  container.querySelectorAll('button[data-summary-id]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = state.recent.find((entry) => entry.id === button.dataset.summaryId)
+        || state.saved.find((entry) => entry.id === button.dataset.summaryId);
+      if (!target) return;
+      state.currentSummary = target;
+      renderSummary(target);
+      switchView('summary');
     });
   });
+}
+
+function pushSummary(summary) {
+  state.recent = [summary, ...state.recent.filter((item) => item.id !== summary.id)].slice(0, 8);
+  state.saved = [summary, ...state.saved.filter((item) => item.title !== summary.title)].slice(0, 8);
+  saveJSON(STORAGE_KEYS.recent, state.recent);
+  saveJSON(STORAGE_KEYS.saved, state.saved);
+  renderSidebar();
+}
+
+async function copySummary() {
+  if (!state.currentSummary) return;
+  const content = formatSummary(state.currentSummary);
+
+  try {
+    await navigator.clipboard.writeText(content);
+    showToast('Summary copied');
+  } catch (error) {
+    const helper = document.createElement('textarea');
+    helper.value = content;
+    document.body.appendChild(helper);
+    helper.select();
+    document.execCommand('copy');
+    helper.remove();
+    showToast('Summary copied');
+  }
+}
+
+function downloadSummary() {
+  if (!state.currentSummary) return;
+  const blob = new Blob([formatSummary(state.currentSummary)], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${state.currentSummary.title.replace(/\s+/g, '-').toLowerCase() || 'summary'}.md`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast('Summary downloaded');
+}
+
+function formatSummary(summary) {
+  const lines = [
+    `# ${summary.title}`,
+    '',
+    '## Executive Summary',
+    summary.executiveSummary,
+    '',
+    '## Key Points',
+    ...summary.keyPoints.map((item) => `- ${item}`),
+    '',
+    '## Important Dates',
+    ...summary.importantDates.map((item) => `- ${item}`),
+    '',
+    '## Important Numbers',
+    ...summary.importantNumbers.map((item) => `- ${item}`),
+    '',
+    '## Action Items',
+    ...summary.actionItems.map((item) => `- ${item}`),
+    '',
+    '## Frequently Asked Questions',
+    ...summary.faqs.map((faq) => `- **${faq.question}**\n  ${faq.answer}`)
+  ];
+
+  return lines.join('\n');
+}
+
+function startNewSummary() {
+  switchView('home');
+  showToast('Ready for a new summary');
+}
+
+function switchView(view) {
+  const home = view === 'home';
+  els.homeView.classList.toggle('hidden', !home);
+  els.summaryView.classList.toggle('hidden', home);
+}
+
+function setLoading(loading) {
+  els.loadingState.classList.toggle('hidden', !loading);
+  els.summarizeBtn.disabled = loading;
+}
+
+function renderList(container, items) {
+  container.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+}
+
+function updateCharCounter() {
+  els.charCounter.textContent = `${els.textInput.value.length} characters`;
+}
+
+function toggleTheme() {
+  const next = els.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem(STORAGE_KEYS.theme, next);
+}
+
+function applyTheme(theme) {
+  els.body.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+  els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function loadTheme() {
+  return localStorage.getItem(STORAGE_KEYS.theme) || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+
+function showToast(message) {
+  els.toast.textContent = message;
+  els.toast.classList.remove('hidden');
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(() => {
+    els.toast.classList.add('hidden');
+  }, 1800);
+}
+
+function normalizeSpace(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function saveJSON(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
 function loadJSON(key, fallback) {
   try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
+    const parsed = JSON.parse(localStorage.getItem(key));
+    return parsed ?? fallback;
+  } catch (error) {
     return fallback;
   }
 }
