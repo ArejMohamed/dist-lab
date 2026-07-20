@@ -1,11 +1,86 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0; url=./pantrychef-index.html" />
-    <title>PantryChef</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arej AI Summarizer</title>
+    <link rel="stylesheet" href="./pantrychef-styles.css" />
   </head>
   <body>
-    <p>Redirecting to PantryChef...</p>
+    <div class="app-shell">
+      <aside class="sidebar card">
+        <div class="sidebar-head">
+          <h2>Arej AI Summarizer</h2>
+          <button id="themeToggle" class="ghost-btn" aria-label="Toggle dark mode">🌙</button>
+        </div>
+        <section class="sidebar-section">
+          <h3>Recent Summaries</h3>
+          <ul id="recentSummaries" class="list"></ul>
+        </section>
+        <section class="sidebar-section">
+          <h3>Saved Documents</h3>
+          <ul id="savedDocuments" class="list"></ul>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <section id="homeView" class="card view active" aria-live="polite">
+          <header class="hero">
+            <h1>Arej AI Summarizer</h1>
+            <p>Summarize PDFs and long documents instantly using AI.</p>
+          </header>
+
+          <div class="input-grid">
+            <div class="input-card">
+              <label for="pdfInput">Upload PDF</label>
+              <input id="pdfInput" type="file" accept="application/pdf" />
+              <p id="fileMeta" class="hint">No PDF selected</p>
+              <button id="samplePdfBtn" class="secondary-btn" type="button">Sample PDF</button>
+            </div>
+
+            <div class="input-card">
+              <label for="textInput">Paste long text</label>
+              <textarea id="textInput" rows="10" placeholder="Paste your document text here..."></textarea>
+              <div class="counter-row">
+                <span id="charCounter">0 characters</span>
+                <span class="hint">Tip: Works offline with built-in fallback summarization.</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="summarizeBtn" class="primary-btn" type="button">Summarize</button>
+          <div id="loadingState" class="loading hidden" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Generating summary...</span>
+          </div>
+        </section>
+
+        <section id="summaryView" class="card view hidden" aria-live="polite">
+          <header class="summary-header">
+            <h2>Summary</h2>
+            <p id="summaryMeta"></p>
+          </header>
+
+          <div class="summary-grid">
+            <article class="summary-card"><h3>Executive Summary</h3><p id="executiveSummary"></p></article>
+            <article class="summary-card"><h3>Key Points</h3><ul id="keyPoints"></ul></article>
+            <article class="summary-card"><h3>Important Dates</h3><ul id="importantDates"></ul></article>
+            <article class="summary-card"><h3>Important Numbers</h3><ul id="importantNumbers"></ul></article>
+            <article class="summary-card"><h3>Action Items</h3><ul id="actionItems"></ul></article>
+            <article class="summary-card"><h3>Frequently Asked Questions</h3><div id="faqs"></div></article>
+          </div>
+
+          <div class="actions-row">
+            <button id="copyBtn" class="secondary-btn" type="button">Copy Summary</button>
+            <button id="downloadBtn" class="secondary-btn" type="button">Download Summary</button>
+            <button id="newSummaryBtn" class="primary-btn" type="button">Start New Summary</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script src="./pantrychef-script.js"></script>
   </body>
 </html>
